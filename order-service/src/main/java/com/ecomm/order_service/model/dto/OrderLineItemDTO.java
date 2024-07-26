@@ -7,8 +7,7 @@ public class OrderLineItemDTO {
     private Double price;
     private Integer quantity;
 
-    public OrderLineItemDTO() {
-    }
+    public OrderLineItemDTO() {}
 
     public OrderLineItemDTO(String skuCode, Double price, Integer quantity) {
         this.skuCode = skuCode;

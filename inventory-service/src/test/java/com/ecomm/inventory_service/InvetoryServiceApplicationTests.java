@@ -1,4 +1,4 @@
-package com.ecomm.invetory_service;
+package com.ecomm.inventory_service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

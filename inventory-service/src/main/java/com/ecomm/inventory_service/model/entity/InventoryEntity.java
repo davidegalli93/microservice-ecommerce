@@ -1,4 +1,4 @@
-package com.ecomm.invetory_service.model.entity;
+package com.ecomm.inventory_service.model.entity;
 
 import jakarta.persistence.*;
 
@@ -13,6 +13,11 @@ public class InventoryEntity {
     private Integer quantity;
 
     public InventoryEntity() {}
+
+    public InventoryEntity(String skuCode, Integer quantity) {
+        this.skuCode = skuCode;
+        this.quantity = quantity;
+    }
 
     public InventoryEntity(Long id, String skuCode, Integer quantity) {
         this.id = id;

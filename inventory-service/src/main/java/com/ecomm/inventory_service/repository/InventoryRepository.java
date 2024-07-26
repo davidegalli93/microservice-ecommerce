@@ -1,6 +1,6 @@
-package com.ecomm.invetory_service.repository;
+package com.ecomm.inventory_service.repository;
 
-import com.ecomm.invetory_service.model.entity.InventoryEntity;
+import com.ecomm.inventory_service.model.entity.InventoryEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

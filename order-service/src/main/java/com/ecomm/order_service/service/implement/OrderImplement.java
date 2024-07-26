@@ -17,6 +17,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderImplement implements OrderService {
@@ -51,39 +53,53 @@ public class OrderImplement implements OrderService {
     public boolean create(OrderRequest orderRequest) {
         OrderEntity order = new OrderEntity();
         order.setDate(LocalDate.now());
+
         //_______________________________
         order.setId_user(null);
         //_______________________________
 
+        //-----------------Set totale dell'ordine----------------------
         Double total = orderRequest.getOrderLineItems()
                 .stream()
-                .mapToDouble(OrderLineItemDTO::getPrice)
+                .mapToDouble(OrderLineItemDTO-> OrderLineItemDTO.getPrice() * OrderLineItemDTO.getQuantity())
                 .sum();
         order.setTotal(total);
 
+        //-----------------Controllo prodotti a magazzino------------------
         List<OrderLineItem> items = orderRequest.getOrderLineItems()
                 .stream()
                 .map(orderLineItemDTO -> orderLineItemConverter.toEntity(orderLineItemDTO))
                 .toList();
         order.setOrderLineItemList(items);
 
-        //Prendo la lista degli skucode per poi verificarli uno ad uno
-        List <String> skuCodes = orderRequest.getOrderLineItems().stream().map(OrderLineItemDTO::getSkuCode).toList();
+        //Passo tutti i prodotti come stringa nell'url per controllare e dopo per modificare le quantità
+        String skuQuantity = orderRequest.getOrderLineItems()
+                .stream().map(orderLineItemDTO -> orderLineItemDTO.getSkuCode() + ":" + orderLineItemDTO.getQuantity().toString())
+                .collect(Collectors.joining(","));
 
         //Chiamo inventory service per sapere se i prodotti sono a magazzino, esegue chiamata asincrona
-        InventoryResponse [] inventoryResponsesArray = webClient.get()
+        Boolean allProductIsInStock =
+                webClient.get()
                 //definiscono la uri del servizio e gli passo come parametro la lista degli skucode
-                .uri("http://localhost:8080/inventory", uriBuilder -> uriBuilder.queryParam("skuCode", skuCodes).build())
+                .uri("http://localhost:8080/inventory", uriBuilder -> uriBuilder.queryParam("skuQuantity", skuQuantity).build())
                 .retrieve()
-                .bodyToMono(InventoryResponse[].class)
+                .bodyToMono(Boolean.class)
                 .block();
 
+        if(Boolean.TRUE.equals(allProductIsInStock)){
+            //Se tutti prodotti sono in stock modifico le quantità a magazzino
+            boolean changeQuantity = Boolean.TRUE.equals(webClient.put()
+                    .uri("http://localhost:8080/inventory/changeorder", uriBuilder -> uriBuilder.queryParam("skuQuantity", skuQuantity).build())
+                    .retrieve()
+                    .bodyToMono(Boolean.class)
+                    .block());
 
-        boolean allProductIsInStock = Arrays.stream(inventoryResponsesArray).allMatch(InventoryResponse::isInStock);
-
-        if(allProductIsInStock){
-            orderRepository.save(order);
-            return true;
+            if (changeQuantity){
+                orderRepository.save(order);
+                return true;
+            } else {
+                return false;
+            }
         } else throw new IllegalArgumentException("Prodotto/i non in stock, riprovare");
     }
 

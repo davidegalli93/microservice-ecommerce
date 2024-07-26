@@ -9,6 +9,7 @@ import com.ecomm.product_service.service.ProductService;
 import com.ecomm.product_service.utils.converter.ProductConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +25,9 @@ public class ProductImplement implements ProductService {
 
     @Autowired
     CategoryRepository categoryRepository;
+
+    @Autowired
+    WebClient webClient;
 
     @Override
     public ProductDTO getById(Long id) {
@@ -52,8 +56,18 @@ public class ProductImplement implements ProductService {
         if (product == null){
             ProductEntity product1 = new ProductEntity(productDTO.getProductName(), productDTO.getProductDescription(), productDTO.getProductPrice(), category);
             productRepository.save(product1);
-            return true;
-        } else throw new IllegalArgumentException("Prodotto già presente con nome :  " + productDTO.getProductName());    }
+
+            String inventory = productDTO.getProductName() + "," + productDTO.getProductQuantity();
+            //Salvo la quantità in magazzino tramite inventory-service
+            Boolean changeQuantity = webClient.post()
+                    .uri("http://localhost:8080/inventory", uriBuilder -> uriBuilder.queryParam("inventory", inventory).build())
+                    .retrieve()
+                    .bodyToMono(Boolean.class)
+                    .block();
+            if (changeQuantity){
+                return true;
+            } else throw new RuntimeException("Errore connessione inventory");
+        } else throw new IllegalArgumentException("Prodotto già presente con nome :  " + productDTO.getProductName());}
 
     @Override
     public boolean updateProduct(Long id, ProductDTO productDTO) {
@@ -63,8 +77,21 @@ public class ProductImplement implements ProductService {
         product.setDescription(productDTO.getProductDescription());
         product.setName(productDTO.getProductName());
         product.setPrice(productDTO.getProductPrice());
-        productRepository.save(product);
-        return true;
+
+        //Salvo la quantità in magazzino tramite inventory-service
+        String quantity = productDTO.getProductName() + "," + productDTO.getProductQuantity();
+        Boolean changeQuantity = webClient.put()
+                .uri("http://localhost:8080/inventory/changequantity", uriBuilder -> uriBuilder.queryParam("quantity", quantity).build())
+                .retrieve()
+                .bodyToMono(Boolean.class)
+                .block();
+
+        if (changeQuantity){
+            productRepository.save(product);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

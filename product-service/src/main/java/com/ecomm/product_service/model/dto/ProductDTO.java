@@ -7,12 +7,14 @@ public class ProductDTO {
     private String productDescription;
     private Double productPrice;
     private String productCategory;
+    private Integer productQuantity;
 
-    public ProductDTO(String productName, String productDescription, Double productPrice, String productCategory) {
+    public ProductDTO(String productName, String productDescription, Double productPrice, String productCategory, Integer productQuantity) {
         this.productName = productName;
         this.productDescription = productDescription;
         this.productPrice = productPrice;
         this.productCategory = productCategory;
+        this.productQuantity = productQuantity;
     }
 
     public ProductDTO(String productName, Double productPrice, String productCategory) {
@@ -62,5 +64,13 @@ public class ProductDTO {
 
     public void setProductCategory(String productCategory) {
         this.productCategory = productCategory;
+    }
+
+    public Integer getProductQuantity() {
+        return productQuantity;
+    }
+
+    public void setProductQuantity(Integer productQuantity) {
+        this.productQuantity = productQuantity;
     }
 }

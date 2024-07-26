@@ -1,4 +1,4 @@
-package com.ecomm.invetory_service;
+package com.ecomm.inventory_service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
